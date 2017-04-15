@@ -39,8 +39,7 @@ class Go90IE(InfoExtractor):
         series = None
         season_number = None
         if 'Item' in video_data.get('__children', {}):
-            for key in video_data['__children']['Item']:
-                metadata = video_data['__children']['Item'][key]
+            for metadata in video_data.get('__children', {}).get('Item', {}).values():
                 if metadata['type'] == 'show':
                     series = metadata.get('title')
                 elif metadata['type'] == 'season':
