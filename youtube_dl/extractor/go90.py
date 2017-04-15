@@ -96,7 +96,7 @@ class Go90IE(InfoExtractor):
                         continue
                     subtitles.setdefault(caption.get('language', 'en'), []).append({
                         'url': caption_url,
-                        'ext': determine_ext(caption_url, 'unknown_subtitle'),
+                        'ext': determine_ext(caption_url, 'vtt'),
                     })
             elif asset.get('type') == 'image':
                 asset_location = asset.get('location')
