@@ -18,7 +18,7 @@ class Go90IE(InfoExtractor):
         'info_dict': {
             'id': '84BUqjLpf9D',
             'ext': 'mp4',
-            'title': 'Inside The Utah Coalition Against Pornography Convention',
+            'title': 'Daily VICE - Inside The Utah Coalition Against Pornography Convention',
             'description': 'VICE\'s Karley Sciortino meets with activists who discuss the state\'s strong anti-porn stance. Then, VICE Sports explains NFL contracts.',
             'timestamp': 1491868800,
             'upload_date': '20170411',
