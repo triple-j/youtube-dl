@@ -37,12 +37,16 @@ class Go90IE(InfoExtractor):
 
         episode_number = int_or_none(video_data.get('episode_number'))
         series = None
+        season = None
+        season_id = None
         season_number = None
         if 'Item' in video_data.get('__children', {}):
             for metadata in video_data.get('__children', {}).get('Item', {}).values():
                 if metadata.get('type') == 'show':
                     series = metadata.get('title')
                 elif metadata.get('type') == 'season':
+                    season = metadata.get('title')
+                    season_id = metadata.get('id')
                     season_number = int_or_none(metadata.get('season_number'))
 
         title = episode = video_data.get('title') or series
@@ -115,6 +119,8 @@ class Go90IE(InfoExtractor):
             'timestamp': parse_iso8601(video_data.get('released_at')),
             'series': series,
             'episode': episode,
+            'season': season,
+            'season_id': season_id,
             'season_number': season_number,
             'episode_number': episode_number,
             'subtitles': subtitles,
