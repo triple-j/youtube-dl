@@ -44,7 +44,6 @@ class Go90IE(InfoExtractor):
         subtitles = {}
         for asset in video_data.get('assets'):
             if asset.get('id') == main_video_asset:
-                # parse video sources
                 for source in asset.get('sources', []):
                     source_location = source.get('location')
                     if not source_location:
@@ -77,7 +76,6 @@ class Go90IE(InfoExtractor):
                             'tbr': int_or_none(source.get('bitrate')),
                         })
 
-                # parse subtitles
                 for caption in asset.get('caption_metadata', []):
                     caption_url = caption.get('source_url')
                     if not caption_url:
@@ -113,7 +111,6 @@ class Go90IE(InfoExtractor):
         }
 
     def _get_metadata(self, video_data, metadata_type):
-        # sanity check - make sure `video_data['__children']['Item']` exists
         if 'Item' not in video_data.get('__children', {}):
             return None
 
