@@ -5,6 +5,7 @@ import re
 
 from .common import InfoExtractor
 from ..utils import (
+    determine_ext,
     int_or_none,
     parse_iso8601,
 )
@@ -92,7 +93,7 @@ class Go90IE(InfoExtractor):
                         continue
                     subtitles.setdefault(caption.get('language', 'en'), []).append({
                         'url': caption_url,
-                        'ext': 'vtt',
+                        'ext': determine_ext(caption_url, 'unknown_subtitle'),
                     })
             elif asset.get('type') == 'image':
                 asset_location = asset.get('location')
