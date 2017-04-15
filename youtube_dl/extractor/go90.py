@@ -32,8 +32,12 @@ class Go90IE(InfoExtractor):
             video_id, headers={
                 'Content-Type': 'application/json; charset=utf-8',
             }, data=b'{"client":"web","device_type":"pc"}')
-        title = video_data['title']
         main_video_asset = video_data['main_video_asset']
+
+        series = self._get_series(video_data)
+        title = episode = video_data.get('title') or series
+        if series and series != title:
+            title = '%s - %s' % (series, title)
 
         thumbnails = []
         formats = []
@@ -89,4 +93,39 @@ class Go90IE(InfoExtractor):
             'description': video_data.get('short_description'),
             'like_count': int_or_none(video_data.get('like_count')),
             'timestamp': parse_iso8601(video_data.get('released_at')),
+            'series': series,
+            'episode': episode,
+            'season_number': self._get_season_number(video_data),
+            'episode_number': self._get_episode_number(video_data),
         }
+
+    def _get_metadata(self, video_data, metadata_type):
+        # sanity check - make sure `video_data['__children']['Item']` exists (TODO: and is `Dict`)
+        if not 'Item' in video_data.get('__children', {}):
+            return None
+
+        for key in video_data['__children']['Item']:
+            item = video_data['__children']['Item'][key]
+            if item['type'] == metadata_type:
+                return item
+
+        return None
+
+    def _get_series(self, video_data):
+        metadata = self._get_metadata(video_data, 'show')
+
+        if metadata:
+            return metadata.get('title')
+        else:
+            return None
+
+    def _get_season_number(self, video_data):
+        metadata = self._get_metadata(video_data, 'season')
+
+        if metadata:
+            return int_or_none(metadata.get('season_number'))
+        else:
+            return None
+
+    def _get_episode_number(self, video_data):
+        return int_or_none(video_data.get('episode_number'))
