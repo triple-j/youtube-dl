@@ -113,8 +113,8 @@ class Go90IE(InfoExtractor):
         }
 
     def _get_metadata(self, video_data, metadata_type):
-        # sanity check - make sure `video_data['__children']['Item']` exists (TODO: and is `Dict`)
-        if not 'Item' in video_data.get('__children', {}):
+        # sanity check - make sure `video_data['__children']['Item']` exists
+        if 'Item' not in video_data.get('__children', {}):
             return None
 
         for key in video_data['__children']['Item']:
