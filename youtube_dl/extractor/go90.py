@@ -41,8 +41,10 @@ class Go90IE(InfoExtractor):
 
         thumbnails = []
         formats = []
+        subtitles = {}
         for asset in video_data.get('assets'):
             if asset.get('id') == main_video_asset:
+                # parse video sources
                 for source in asset.get('sources', []):
                     source_location = source.get('location')
                     if not source_location:
@@ -74,6 +76,16 @@ class Go90IE(InfoExtractor):
                             'height': int_or_none(source.get('height')),
                             'tbr': int_or_none(source.get('bitrate')),
                         })
+
+                # parse subtitles
+                for caption in asset.get('caption_metadata', []):
+                    caption_url = caption.get('source_url')
+                    if not caption_url:
+                        continue
+                    subtitles.setdefault(caption.get('language', 'en'), []).append({
+                        'url': caption_url,
+                        'ext': 'vtt',
+                    })
             elif asset.get('type') == 'image':
                 asset_location = asset.get('location')
                 if not asset_location:
@@ -97,6 +109,7 @@ class Go90IE(InfoExtractor):
             'episode': episode,
             'season_number': self._get_season_number(video_data),
             'episode_number': self._get_episode_number(video_data),
+            'subtitles': subtitles,
         }
 
     def _get_metadata(self, video_data, metadata_type):
