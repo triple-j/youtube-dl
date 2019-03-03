@@ -44,7 +44,7 @@ class ComCarCoffIE(InfoExtractor):
 
         video_id = compat_str(video_data['mediaId'])
         title = video_data['title']
-        formats = self._extract_m3u8_formats(
+        formats, subtitles = self._extract_m3u8_formats_and_subtitles(
             video_data['mediaUrl'], video_id, 'mp4')
         self._sort_formats(formats)
 
@@ -70,5 +70,6 @@ class ComCarCoffIE(InfoExtractor):
             'formats': formats,
             'season_number': int_or_none(video_data.get('season')),
             'episode_number': int_or_none(video_data.get('episode')),
+            'subtitles': subtitles,
             'webpage_url': 'http://comediansincarsgettingcoffee.com/%s' % (video_data.get('urlSlug', video_data.get('slug'))),
         }

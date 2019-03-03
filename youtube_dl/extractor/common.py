@@ -1090,7 +1090,6 @@ class InfoExtractor(object):
 
         def _formats_key(f):
             # TODO remove the following workaround
-            from ..utils import determine_ext
             if not f.get('ext') and 'url' in f:
                 f['ext'] = determine_ext(f['url'])
 
@@ -1338,7 +1337,11 @@ class InfoExtractor(object):
             'format_note': 'Quality selection URL',
         }
 
-    def _extract_m3u8_formats(self, m3u8_url, video_id, ext=None,
+    def _extract_m3u8_formats(self, *args, **kwargs):
+        fmts, subs = self._extract_m3u8_formats_and_subtitles(*args, **kwargs)
+        return fmts
+
+    def _extract_m3u8_formats_and_subtitles(self, m3u8_url, video_id, ext=None,
                               entry_protocol='m3u8', preference=None,
                               m3u8_id=None, note=None, errnote=None,
                               fatal=True, live=False):
@@ -1349,25 +1352,27 @@ class InfoExtractor(object):
             fatal=fatal)
 
         if res is False:
-            return []
+            return [], {}
 
         m3u8_doc, urlh = res
         m3u8_url = urlh.geturl()
 
-        return self._parse_m3u8_formats(
+        return self._parse_m3u8_formats_and_subtitles(
             m3u8_doc, m3u8_url, ext=ext, entry_protocol=entry_protocol,
             preference=preference, m3u8_id=m3u8_id, live=live)
 
-    def _parse_m3u8_formats(self, m3u8_doc, m3u8_url, ext=None,
+    def _parse_m3u8_formats_and_subtitles(self, m3u8_doc, m3u8_url, ext=None,
                             entry_protocol='m3u8', preference=None,
                             m3u8_id=None, live=False):
         if '#EXT-X-FAXS-CM:' in m3u8_doc:  # Adobe Flash Access
-            return []
+            return [], {}
 
         if re.search(r'#EXT-X-SESSION-KEY:.*?URI="skd://', m3u8_doc):  # Apple FairPlay
             return []
 
         formats = []
+
+        subtitles = {}
 
         format_url = lambda u: (
             u
@@ -1408,6 +1413,17 @@ class InfoExtractor(object):
             if not (media_type and group_id and name):
                 return
             groups.setdefault(group_id, []).append(media)
+            # <https://tools.ietf.org/html/draft-pantos-http-live-streaming-13#section-3.4.9>
+            if media_type == 'SUBTITLES':
+                lang = media['LANGUAGE'] # XXX: normalise?
+                sub_info = {
+                    'url': media['URI'],
+                    'ext': determine_ext(media['URI'])
+                }
+                if sub_info['ext'] == 'm3u8': # XXX
+                    sub_info['ext'] = 'vtt'
+                    sub_info['protocol'] = 'm3u8_webvtt'
+                subtitles.setdefault(lang, []).append(sub_info)
             if media_type not in ('VIDEO', 'AUDIO'):
                 return
             media_url = media.get('URI')
@@ -1515,7 +1531,7 @@ class InfoExtractor(object):
                         f['acodec'] = 'none'
                 formats.append(f)
                 last_stream_inf = {}
-        return formats
+        return formats, subtitles
 
     @staticmethod
     def _xpath_ns(path, namespace=None):
