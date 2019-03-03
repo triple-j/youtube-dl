@@ -146,7 +146,7 @@ class RoosterTeethIE(InfoExtractor):
         if not m3u8_url:
             raise ExtractorError('Unable to extract m3u8 URL')
 
-        formats = self._extract_m3u8_formats(
+        formats, subtitles = self._extract_m3u8_formats_and_subtitles(
             m3u8_url, display_id, ext='mp4',
             entry_protocol='m3u8_native', m3u8_id='hls')
         self._sort_formats(formats)
@@ -162,6 +162,7 @@ class RoosterTeethIE(InfoExtractor):
             'series': series,
             'episode': episode,
             'formats': formats,
+            'subtitles': subtitles,
         }
 
     def _golive_error(self, video_id, member_level):
