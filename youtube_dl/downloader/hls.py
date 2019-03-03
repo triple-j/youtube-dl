@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import os
 import re
 import binascii
 try:
@@ -17,6 +18,8 @@ from ..compat import (
     compat_struct_pack,
 )
 from ..utils import (
+    encodeFilename,
+    sanitize_open,
     parse_m3u8_attributes,
     update_url_query,
 )
