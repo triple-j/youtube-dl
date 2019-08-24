@@ -7,6 +7,7 @@ from .common import InfoExtractor
 from ..utils import (
     ExtractorError,
     compat_str,
+    int_or_none,
     str_or_none,
     try_get,
     unified_timestamp,
@@ -103,9 +104,11 @@ class RoosterTeethIE(InfoExtractor):
 
         attributes = data['attributes']
         episode = attributes.get('display_title')
+        episode_number = int_or_none(attributes.get('number'))
         title = attributes['title']
         description = attributes.get('caption')
         series = attributes.get('show_title')
+        season_number = int_or_none(attributes.get('season_number'))
 
         thumbnails = []
         for i, size in enumerate(['thumb', 'small', 'medium', 'large']):
@@ -161,6 +164,8 @@ class RoosterTeethIE(InfoExtractor):
             'thumbnails': thumbnails,
             'series': series,
             'episode': episode,
+            'episode_number': episode_number,
+            'season_number': season_number,
             'formats': formats,
             'subtitles': subtitles,
         }
