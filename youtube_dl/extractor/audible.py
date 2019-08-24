@@ -53,13 +53,12 @@ class AudibleIE(InfoExtractor):
 
     def _real_extract(self, url):
         book_id = self._match_id(url)
-        # we don't actually care about the url,
-        # we just need it to get the book_id
-        print "[!!!] " + book_id
         webpage = self._download_webpage(url, book_id)
 
         title = self._og_search_title(webpage)
 
+
+        # Everything below this line requires a login --------------------------
 
         cloud_player_url = 'https://www.audible.com/cloudplayer?asin=' + book_id
         cloud_player_page = self._download_webpage(
@@ -70,9 +69,7 @@ class AudibleIE(InfoExtractor):
         token = cloud_player_form.get('token')
         if token is None:
             raise ExtractorError("Could not find token")
-        print "[!!!] " + token
 
-        #metadata = self._download_webpage(
         metadata = self._download_json(
             'https://www.audible.com/contentlicenseajax', book_id,
             data=urlencode_postdata({
@@ -83,10 +80,8 @@ class AudibleIE(InfoExtractor):
             }))
         pprint(metadata)
 
-        f4m_url = metadata.get('hdscontentLicenseUrl')
+        #f4m_url = metadata.get('hdscontentLicenseUrl')
         m3u8_url = metadata.get('hlscontentLicenseUrl')
-
-        #_extract_akamai_formats
         formats = []
         if m3u8_url:
             formats.extend(self._extract_m3u8_formats(
@@ -124,8 +119,6 @@ class AudibleIE(InfoExtractor):
             chapters.append(chapter)
 
         #pprint(chapters)
-        #with open('webpage.html', 'w') as f:
-        #    f.write(webpage.encode('utf-8'))
 
         return {
             'id': book_id,
