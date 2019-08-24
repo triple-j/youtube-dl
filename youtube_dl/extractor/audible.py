@@ -102,6 +102,9 @@ class AudibleIE(InfoExtractor):
 
         # Everything below this line requires a login --------------------------
 
+        # TODO: run `_check_login_status` here instead of in `_real_initialize` (reduce page downloads)
+        # TODO: gracefully fail when a user doesn't have access to a book
+
         cloud_player_url = 'https://www.audible.com/cloudplayer?asin=' + book_id
         cloud_player_page = self._download_webpage(
             cloud_player_url, book_id, 'Retrieving token')
