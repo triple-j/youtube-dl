@@ -191,6 +191,30 @@ class AudibleIE(InfoExtractor):
         #        m3u8_url, book_id))
         self._sort_formats(formats)
 
+        duration = metadata.get('runTime')
+
+        chapters = []
+        for md_chapter in metadata.get('cloudPlayerChapters', []):
+            ch_start_time = md_chapter.get('chapterStartPosition')
+            ch_end_time = md_chapter.get('chapterEndPosition')
+            ch_title = md_chapter.get('chapterTitle')
+
+            if ch_start_time is None or ch_end_time is None:
+                self.report_warning('Missing chapter information')
+                chapters = []
+                break
+
+            chapter = {
+                'start_time': float(ch_start_time) / 1000,
+                'end_time': float(ch_end_time) / 1000
+            }
+
+            if title:
+                chapter['title'] = ch_title
+
+            chapters.append(chapter)
+
+        #pprint(chapters)
         #with open('webpage.html', 'w') as f:
         #    f.write(webpage.encode('utf-8'))
 
@@ -198,6 +222,8 @@ class AudibleIE(InfoExtractor):
             'id': book_id,
             'title': title,
             'formats': formats,
+            'duration': duration,
+            'chapters': chapters if len(chapters) > 0 else None,
             # TODO more properties (see youtube_dl/extractor/common.py)
         }
 
