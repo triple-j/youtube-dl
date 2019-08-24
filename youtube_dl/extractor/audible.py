@@ -56,6 +56,28 @@ class AudibleIE(InfoExtractor):
         book_id = self._match_id(url)
         webpage = self._download_webpage(url, book_id)
 
+        '''
+        info from web page
+
+        ~title~
+        author(s)       -> creator / ~artist: Artist(s) of the track.~ / album_artist
+        narrator(s)     -> artist: Artist(s) of the track.
+        format/type     -> ~categories~ / ~tags~ / album_type
+        Release date    -> release_date: The date (YYYYMMDD) when the video was released. / release_year: Year (YYYY) when the album was released.
+        Language
+        Publisher       -> uploader
+        breadcrumbs     -> categories / ~tags~ / genre
+        ~thumbnail~
+        rating          -> average_rating
+        series          -> series
+        book in series  -> episode_number / track_number
+        Publisher's Summary -> description
+        Critic Reviews      -> description
+
+        What members say    -> comments
+
+        '''
+
         title = self._og_search_title(webpage)
 
         thumbnails = []
