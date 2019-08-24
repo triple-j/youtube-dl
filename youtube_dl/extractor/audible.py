@@ -106,7 +106,6 @@ class AudibleIE(InfoExtractor):
         cloud_player_page = self._download_webpage(
             cloud_player_url, book_id, 'Retrieving token')
         cloud_player_form = self._hidden_inputs(cloud_player_page)
-        pprint(cloud_player_form)
 
         token = cloud_player_form.get('token')
         if token is None:
@@ -120,7 +119,6 @@ class AudibleIE(InfoExtractor):
                 'key': 'AudibleCloudPlayer',
                 'action': 'getUrl'
             }))
-        pprint(metadata)
 
         #f4m_url = metadata.get('hdscontentLicenseUrl')
         m3u8_url = metadata.get('hlscontentLicenseUrl')
@@ -159,8 +157,6 @@ class AudibleIE(InfoExtractor):
                 chapter['title'] = ch_title
 
             chapters.append(chapter)
-
-        #pprint(chapters)
 
         return {
             'id': book_id,
