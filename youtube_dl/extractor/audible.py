@@ -6,6 +6,7 @@ import re
 from .common import InfoExtractor
 from ..utils import (
     ExtractorError,
+    extract_attributes,
     get_element_by_class,
     urlencode_postdata,
 )
@@ -57,6 +58,25 @@ class AudibleIE(InfoExtractor):
 
         title = self._og_search_title(webpage)
 
+        thumbnails = []
+
+        og_thumbnail = self._og_search_thumbnail(webpage)
+        if og_thumbnail:
+            thumbnails.append({
+                'url': og_thumbnail,
+                'preference': 210
+            })
+
+        thumb_element = self._search_regex(
+            r'(<img[^>]+alt=["\'][^\'"]*\bcover art\b[^>]*>)', webpage,
+            'thumbnail element', default=None)
+        if thumb_element:
+            lg_thumbnail_attrs = extract_attributes(thumb_element)
+            if lg_thumbnail_attrs.get('src'):
+                thumbnails.append({
+                    'url': lg_thumbnail_attrs.get('src'),
+                    'preference': 500
+                })
 
         # Everything below this line requires a login --------------------------
 
@@ -126,6 +146,7 @@ class AudibleIE(InfoExtractor):
             'formats': formats,
             'duration': duration,
             'chapters': chapters if len(chapters) > 0 else None,
+            'thumbnails': thumbnails if len(thumbnails) > 0 else None,
             # TODO more properties (see youtube_dl/extractor/common.py)
         }
 
