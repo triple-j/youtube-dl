@@ -129,16 +129,17 @@ class AudibleIE(InfoExtractor):
         book_series = None
         book_in_series = None
         book_number = None
+        in_multiple_series = False
         all_series = self._get_label_text('seriesLabel', webpage, prefix='Series:')
-        pprint(all_series)
         if all_series:
-            # comma seperated, first two (ignore multiple series)
             series_sep = all_series.split(',')
             book_series = series_sep[0].strip()
             if len(series_sep) > 1:
                 book_in_series = series_sep[1].strip()
                 if book_in_series.startswith('Book'):
                     book_number = float(book_in_series[4:].strip())
+                if len(series_sep) > 2 and len(series_sep) % 2 == 0:
+                    in_multiple_series = True
 
         categories = []
         breadcrumbs_text = get_elements_by_class('navigation-link', webpage)
@@ -160,6 +161,13 @@ class AudibleIE(InfoExtractor):
         if critics_summary_html:
             critics_summary_text = clean_html_markdown(critics_summary_html)
             description += critics_summary_text + '\n\n'
+        if in_multiple_series:
+            series_list_text = '## Series List\n\n'
+            for sidx in range(0, len(series_sep), 2):
+                series_list_text += '- %s, %s\n' % (
+                    series_sep[sidx].strip(),
+                    series_sep[sidx+1].strip())
+            description += series_list_text + '\n'
 
         # Everything below this line requires a login --------------------------
 
