@@ -35,12 +35,14 @@ class AudibleIE(InfoExtractor):
     }
 
 
-    def _check_login_status(self):
-        homepage = self._download_webpage(
-            self._HOMEPAGE_URL, None,
-            'Checking login status')
 
-        logged_in_elm = get_element_by_class('ui-it-credit-balance', homepage)
+    def _check_login_status(self, html=None):
+        if not html:
+            html = self._download_webpage(
+                self._HOMEPAGE_URL, None,
+                'Checking login status')
+
+        logged_in_elm = get_element_by_class('ui-it-credit-balance', html)
 
         if logged_in_elm is None:
             raise ExtractorError(
