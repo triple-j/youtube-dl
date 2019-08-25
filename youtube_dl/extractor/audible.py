@@ -10,6 +10,7 @@ from ..utils import (
     ExtractorError,
     extract_attributes,
     get_element_by_class,
+    get_elements_by_class,
     unified_strdate,
     urlencode_postdata,
 )
@@ -139,6 +140,11 @@ class AudibleIE(InfoExtractor):
                 if book_in_series.startswith('Book'):
                     book_number = float(book_in_series[4:].strip())
 
+        categories = []
+        breadcrumbs_text = get_elements_by_class('navigation-link', webpage)
+        if breadcrumbs_text:
+            categories.extend(breadcrumbs_text)
+
         description = ""
         # Not all summaries show up on a given book, but the publisher summary
         # is the most common
@@ -236,6 +242,8 @@ class AudibleIE(InfoExtractor):
             'episode_number': book_number,
             'track_number': book_number,
             'episode_id': book_in_series,
+            'categories': categories if len(categories) > 0 else None,
+            'genre': categories if len(categories) > 0 else None,
             'description': description if description is not "" else None,
             # TODO more properties (see youtube_dl/extractor/common.py)
         }
