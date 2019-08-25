@@ -10,6 +10,7 @@ from ..utils import (
     ExtractorError,
     extract_attributes,
     get_element_by_class,
+    unified_strdate,
     urlencode_postdata,
 )
 
@@ -120,17 +121,9 @@ class AudibleIE(InfoExtractor):
         publisher = self._get_label_text('publisherLabel', webpage, prefix='Publisher:')
 
         release_date_yyyymmdd = None
-        release_year_yyyy = None
         release_date = self._get_label_text('releaseDateLabel', webpage, prefix='Release date:')
         if release_date:
-            mobj = re.search(r'(?P<mm>\d{2})-(?P<dd>\d{2})-(?P<yy>\d{2})', release_date)
-            if mobj:
-                if int(mobj.group('yy')) >= 80:
-                    # FYI this will break in the year 2080
-                    release_year_yyyy = "19" + mobj.group('yy')
-                else:
-                    release_year_yyyy = "20" + mobj.group('yy')
-                release_date_yyyymmdd = release_year_yyyy + mobj.group('mm') + mobj.group('dd')
+            release_date_yyyymmdd = unified_strdate(release_date, False)
 
         book_series = None
         book_in_series = None
@@ -237,7 +230,7 @@ class AudibleIE(InfoExtractor):
             'album_type': performance_type,
             'uploader': publisher,
             'release_date': release_date_yyyymmdd,
-            'release_year': int(release_year_yyyy) if release_year_yyyy else None,
+            'release_year': int(release_date_yyyymmdd[:4]) if release_date_yyyymmdd else None,
             'series': book_series,
             'album': book_series,
             'episode_number': book_number,
