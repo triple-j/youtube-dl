@@ -118,6 +118,20 @@ class AudibleIE(InfoExtractor):
         performance_type = self._get_label_text('format', webpage)
         publisher = self._get_label_text('publisherLabel', webpage, prefix='Publisher:')
 
+        release_date_yyyymmdd = None
+        release_year_yyyy = None
+        release_date = self._get_label_text('releaseDateLabel', webpage, prefix='Release date:')
+        pprint(release_date)
+        if release_date:
+            mobj = re.search(r'(?P<mm>\d{2})-(?P<dd>\d{2})-(?P<yy>\d{2})', release_date)
+            if mobj:
+                if int(mobj.group('yy')) >= 80:
+                    # FYI this will break in the year 2080
+                    release_year_yyyy = "19" + mobj.group('yy')
+                else:
+                    release_year_yyyy = "20" + mobj.group('yy')
+                release_date_yyyymmdd = release_year_yyyy + mobj.group('mm') + mobj.group('dd')
+
         # Everything below this line requires a login --------------------------
 
         # TODO: run `_check_login_status` here instead of in `_real_initialize` (reduce page downloads)
@@ -191,6 +205,8 @@ class AudibleIE(InfoExtractor):
             'artist': narrators,
             'album_type': performance_type,
             'uploader': publisher,
+            'release_date': release_date_yyyymmdd,
+            'release_year': release_year_yyyy,
             # TODO more properties (see youtube_dl/extractor/common.py)
         }
 
