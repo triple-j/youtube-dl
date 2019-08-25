@@ -6,6 +6,7 @@ import re
 from .common import InfoExtractor
 from ..utils import (
     clean_html,
+    clean_html_markdown,
     ExtractorError,
     extract_attributes,
     get_element_by_class,
@@ -145,6 +146,22 @@ class AudibleIE(InfoExtractor):
                 if book_in_series.startswith('Book'):
                     book_number = float(book_in_series[4:].strip())
 
+        description = ""
+        # Not all summaries show up on a given book, but the publisher summary
+        # is the most common
+        editorial_summary_html = get_element_by_class('productEditorialSummary', webpage)
+        if editorial_summary_html:
+            editorial_summary_text = clean_html_markdown(editorial_summary_html)
+            description += editorial_summary_text + '\n\n'
+        publisher_summary_html = get_element_by_class('productPublisherSummary', webpage)
+        if publisher_summary_html:
+            publisher_summary_text = clean_html_markdown(publisher_summary_html)
+            description += publisher_summary_text + '\n\n'
+        critics_summary_html = get_element_by_class('productCriticsSummary', webpage)
+        if critics_summary_html:
+            critics_summary_text = clean_html_markdown(critics_summary_html)
+            description += critics_summary_text + '\n\n'
+
         # Everything below this line requires a login --------------------------
 
         # TODO: run `_check_login_status` here instead of in `_real_initialize` (reduce page downloads)
@@ -226,6 +243,7 @@ class AudibleIE(InfoExtractor):
             'episode_number': book_number,
             'track_number': book_number,
             'episode_id': book_in_series,
+            'description': description if description is not "" else None,
             # TODO more properties (see youtube_dl/extractor/common.py)
         }
 
