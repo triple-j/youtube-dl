@@ -5,6 +5,7 @@ import re
 
 from .common import InfoExtractor
 from ..utils import (
+    clean_html,
     ExtractorError,
     extract_attributes,
     get_element_by_class,
@@ -34,7 +35,17 @@ class AudibleIE(InfoExtractor):
         }
     }
 
+    @staticmethod
+    def _get_label_text(class_name, html, prefix=None):
+        label_text = None
 
+        label_html = get_element_by_class(class_name, html)
+        if label_html:
+            label_text = re.sub(r'\s+', ' ', clean_html(label_html))
+            if prefix and label_text.startswith(prefix):
+                label_text = label_text[len(prefix):].strip()
+
+        return label_text
 
     def _check_login_status(self, html=None):
         if not html:
@@ -101,6 +112,11 @@ class AudibleIE(InfoExtractor):
                     'url': lg_thumbnail_attrs.get('src'),
                     'preference': 500
                 })
+
+        authors = self._get_label_text('authorLabel', webpage, prefix='By:')
+        narrators = self._get_label_text('narratorLabel', webpage, prefix='Narrated by:')
+        performance_type = self._get_label_text('format', webpage)
+        publisher = self._get_label_text('publisherLabel', webpage, prefix='Publisher:')
 
         # Everything below this line requires a login --------------------------
 
@@ -170,6 +186,11 @@ class AudibleIE(InfoExtractor):
             'duration': duration,
             'chapters': chapters if len(chapters) > 0 else None,
             'thumbnails': thumbnails if len(thumbnails) > 0 else None,
+            'creator': authors,
+            'album_artist': authors,
+            'artist': narrators,
+            'album_type': performance_type,
+            'uploader': publisher,
             # TODO more properties (see youtube_dl/extractor/common.py)
         }
 
