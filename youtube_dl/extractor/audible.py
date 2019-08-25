@@ -121,7 +121,6 @@ class AudibleIE(InfoExtractor):
         release_date_yyyymmdd = None
         release_year_yyyy = None
         release_date = self._get_label_text('releaseDateLabel', webpage, prefix='Release date:')
-        pprint(release_date)
         if release_date:
             mobj = re.search(r'(?P<mm>\d{2})-(?P<dd>\d{2})-(?P<yy>\d{2})', release_date)
             if mobj:
@@ -221,7 +220,7 @@ class AudibleIE(InfoExtractor):
             'album_type': performance_type,
             'uploader': publisher,
             'release_date': release_date_yyyymmdd,
-            'release_year': release_year_yyyy,
+            'release_year': int(release_year_yyyy) if release_year_yyyy else None,
             'series': book_series,
             'album': book_series,
             'episode_number': book_number,
