@@ -82,8 +82,8 @@ class AudibleIE(InfoExtractor):
         breadcrumbs     -> categories / ~tags~ / genre
         ~thumbnail~
         rating          -> average_rating
-        series          -> series
-        book in series  -> episode_number / track_number
+        series          -> series / album
+        book in series  -> episode_number / track_number / episode_id (eg. Book 3)
         Publisher's Summary -> description
         Critic Reviews      -> description
 
@@ -132,6 +132,20 @@ class AudibleIE(InfoExtractor):
                     release_year_yyyy = "20" + mobj.group('yy')
                 release_date_yyyymmdd = release_year_yyyy + mobj.group('mm') + mobj.group('dd')
 
+        book_series = None
+        book_in_series = None
+        book_number = None
+        all_series = self._get_label_text('seriesLabel', webpage, prefix='Series:')
+        pprint(all_series)
+        if all_series:
+            # comma seperated, first two (ignore multiple series)
+            series_sep = all_series.split(',')
+            book_series = series_sep[0].strip()
+            if len(series_sep) > 1:
+                book_in_series = series_sep[1].strip()
+                if book_in_series.startswith('Book'):
+                    book_number = float(book_in_series[4:].strip())
+
         # Everything below this line requires a login --------------------------
 
         # TODO: run `_check_login_status` here instead of in `_real_initialize` (reduce page downloads)
@@ -153,7 +167,8 @@ class AudibleIE(InfoExtractor):
                 'token': token,
                 'key': 'AudibleCloudPlayer',
                 'action': 'getUrl'
-            }))
+            }),
+            headers={'Referer': cloud_player_url})
 
         #f4m_url = metadata.get('hdscontentLicenseUrl')
         m3u8_url = metadata.get('hlscontentLicenseUrl')
@@ -207,6 +222,11 @@ class AudibleIE(InfoExtractor):
             'uploader': publisher,
             'release_date': release_date_yyyymmdd,
             'release_year': release_year_yyyy,
+            'series': book_series,
+            'album': book_series,
+            'episode_number': book_number,
+            'track_number': book_number,
+            'episode_id': book_in_series,
             # TODO more properties (see youtube_dl/extractor/common.py)
         }
 
