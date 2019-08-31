@@ -281,7 +281,7 @@ class AudibleIE(InfoExtractor):
             'track_number': book_number,
             'episode_id': book_in_series,
             'categories': categories if len(categories) > 0 else None,
-            'genre': categories if len(categories) > 0 else None,
+            'genre': ', '.join(categories) if len(categories) > 0 else None,
             'description': description if description is not "" else None,
             # TODO more properties (see youtube_dl/extractor/common.py)
         }
