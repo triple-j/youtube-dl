@@ -249,7 +249,7 @@ class AudibleIE(InfoExtractor):
                     'end_time': float(ch_end_time) / 1000
                 }
 
-                if title:
+                if ch_title:
                     chapter['title'] = ch_title
 
                 chapters.append(chapter)
