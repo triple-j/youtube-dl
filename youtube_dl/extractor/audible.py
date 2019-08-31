@@ -23,21 +23,40 @@ class AudibleIE(InfoExtractor):
     IE_NAME = 'audible'
     _VALID_URL = r'https?://(?:.+?\.)?audible\.com/pd/(?:.+)/(?P<id>[^/?#&]+)'
     _HOMEPAGE_URL = 'https://www.audible.com'
-    _TEST = {
+    _TESTS = [{
         'url': 'https://www.audible.com/pd/Neil-Gaimans-How-the-Marquis-Got-His-Coat-Back-Audiobook/B01LZB4R8W',
-        'md5': 'TODO: md5 sum of the first 10241 bytes of the video file (use --test)',
+        'md5': '7bcfd4aab323cee607d8425c9aba275b',
         'info_dict': {
             'id': 'B01LZB4R8W',
-            'ext': 'mp4',
-            'title': '???',
+            'ext': 'mp3',
+            'title': 'Neil Gaiman\'s How the Marquis Got His Coat Back',
+            'description': 'md5:851082468b157f20c82caf10051c5a24',
             'thumbnail': 're:^https?://.*\.jpg$',
-            # TODO more properties, either as:
-            # * A value
-            # * MD5 checksum; start the string with md5:
-            # * A regular expression; start the string with re:
-            # * Any Python type (for example int or float)
-        }
-    }
+            'creator': 'Neil Gaiman',
+            'album_artist': 'Neil Gaiman',
+            'artist': 'Paterson Joseph, Bernard Cribbins, Samantha Beart, Adrian Lester, Mitch Benn, Don Warrington',
+        },
+        'expected_warnings': ['You don\'t appear to be logged in.']
+    }, {
+        'url': 'https://www.audible.com/pd/Merrick-Audiobook/B002UUKMKQ',
+        'md5': '3bcbc2ed79201332db8d72b4c95a0269',
+        'info_dict': {
+            'id': 'B002UUKMKQ',
+            'ext': 'mp3',
+            'title': 'Merrick',
+            'description': 'md5:82c8d4687e361ebb70162039288dcba2',
+            'thumbnail': 're:^https?://.*\.jpg$',
+            'creator': 'Anne Rice',
+            'album_artist': 'Anne Rice',
+            'artist': 'Graeme Malcolm',
+            'series': 'The Vampire Chronicles',
+            'album': 'The Vampire Chronicles',
+            'episode_number': 7,
+            'track_number': 7,
+            'episode_id': 'Book 7',
+        },
+        'expected_warnings': ['You don\'t appear to be logged in.']
+    }]
 
     @staticmethod
     def _get_label_text(class_name, html, prefix=None):
