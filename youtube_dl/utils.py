@@ -30,7 +30,6 @@ import ssl
 import subprocess
 import sys
 import tempfile
-import textwrap
 import traceback
 import xml.etree.ElementTree
 import zlib
