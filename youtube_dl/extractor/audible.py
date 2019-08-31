@@ -16,28 +16,44 @@ from ..utils import (
     urlencode_postdata,
 )
 
-#DEBUG
-from pprint import pprint
-
 class AudibleIE(InfoExtractor):
     IE_NAME = 'audible'
     _VALID_URL = r'https?://(?:.+?\.)?audible\.com/pd/(?:.+)/(?P<id>[^/?#&]+)'
     _HOMEPAGE_URL = 'https://www.audible.com'
-    _TEST = {
+    _TESTS = [{
         'url': 'https://www.audible.com/pd/Neil-Gaimans-How-the-Marquis-Got-His-Coat-Back-Audiobook/B01LZB4R8W',
-        'md5': 'TODO: md5 sum of the first 10241 bytes of the video file (use --test)',
+        'md5': '7bcfd4aab323cee607d8425c9aba275b',
         'info_dict': {
             'id': 'B01LZB4R8W',
-            'ext': 'mp4',
-            'title': '???',
+            'ext': 'mp3',
+            'title': 'Neil Gaiman\'s How the Marquis Got His Coat Back',
+            'description': 'md5:851082468b157f20c82caf10051c5a24',
             'thumbnail': 're:^https?://.*\.jpg$',
-            # TODO more properties, either as:
-            # * A value
-            # * MD5 checksum; start the string with md5:
-            # * A regular expression; start the string with re:
-            # * Any Python type (for example int or float)
-        }
-    }
+            'creator': 'Neil Gaiman',
+            'album_artist': 'Neil Gaiman',
+            'artist': 'Paterson Joseph, Bernard Cribbins, Samantha Beart, Adrian Lester, Mitch Benn, Don Warrington',
+        },
+        'expected_warnings': ['You don\'t appear to be logged in.']
+    }, {
+        'url': 'https://www.audible.com/pd/Merrick-Audiobook/B002UUKMKQ',
+        'md5': '3bcbc2ed79201332db8d72b4c95a0269',
+        'info_dict': {
+            'id': 'B002UUKMKQ',
+            'ext': 'mp3',
+            'title': 'Merrick',
+            'description': 'md5:82c8d4687e361ebb70162039288dcba2',
+            'thumbnail': 're:^https?://.*\.jpg$',
+            'creator': 'Anne Rice',
+            'album_artist': 'Anne Rice',
+            'artist': 'Graeme Malcolm',
+            'series': 'The Vampire Chronicles',
+            'album': 'The Vampire Chronicles',
+            'episode_number': 7,
+            'track_number': 7,
+            'episode_id': 'Book 7',
+        },
+        'expected_warnings': ['You don\'t appear to be logged in.']
+    }]
 
     @staticmethod
     def _get_label_text(class_name, html, prefix=None):
@@ -75,28 +91,6 @@ class AudibleIE(InfoExtractor):
     def _real_extract(self, url):
         book_id = self._match_id(url)
         webpage = self._download_webpage(url, book_id)
-
-        '''
-        info from web page
-
-        ~title~
-        author(s)       -> creator / ~artist: Artist(s) of the track.~ / album_artist
-        narrator(s)     -> artist: Artist(s) of the track.
-        format/type     -> ~categories~ / ~tags~ / album_type
-        Release date    -> release_date: The date (YYYYMMDD) when the video was released. / release_year: Year (YYYY) when the album was released.
-        Language
-        Publisher       -> uploader
-        breadcrumbs     -> categories / ~tags~ / genre
-        ~thumbnail~
-        rating          -> average_rating
-        series          -> series / album
-        book in series  -> episode_number / track_number / episode_id (eg. Book 3)
-        Publisher's Summary -> description
-        Critic Reviews      -> description
-
-        What members say    -> comments
-
-        '''
 
         title = self._og_search_title(webpage)
 
@@ -178,7 +172,6 @@ class AudibleIE(InfoExtractor):
         sample_audio = self._search_regex(
             r'\s+data-mp3=(["\'])(?P<url>.+?)\1', webpage,
             'Audio Sample', default=None, group='url')
-        pprint(sample_audio)
         sample_format = {
             'url': sample_audio,
             'format_id': 'sample',
@@ -198,7 +191,8 @@ class AudibleIE(InfoExtractor):
 
         if is_logged_in and not book_purchased:
             self.report_warning(
-                'You don\'t appear to own this title.')
+                'You don\'t appear to own this title.',
+                book_id)
 
         duration = None
         chapters = []
@@ -222,21 +216,12 @@ class AudibleIE(InfoExtractor):
                 }),
                 headers={'Referer': cloud_player_url})
 
-            #f4m_url = metadata.get('hdscontentLicenseUrl')
             m3u8_url = metadata.get('hlscontentLicenseUrl')
             if m3u8_url:
-                m3u8_formats = self._extract_m3u8_formats(
-                    m3u8_url, book_id, 'mp4', 'm3u8_native',
-                    m3u8_id='hls', fatal=False)
-                self._sort_formats(m3u8_formats)
+                m3u8_formats = self._extract_akamai_formats(
+                    m3u8_url, book_id, skip_protocols=['f4m'])
                 formats.extend(m3u8_formats)
-            #if f4m_url:
-            #    formats.extend(self._extract_akamai_formats(
-            #        f4m_url, book_id))
-            #if m3u8_url:
-            #    formats.extend(self._extract_akamai_formats(
-            #        m3u8_url, book_id))
-            #self._sort_formats(formats)
+            self._sort_formats(formats)
 
             duration = metadata.get('runTime')
 
@@ -256,7 +241,7 @@ class AudibleIE(InfoExtractor):
                     'end_time': float(ch_end_time) / 1000
                 }
 
-                if title:
+                if ch_title:
                     chapter['title'] = ch_title
 
                 chapters.append(chapter)
@@ -281,7 +266,7 @@ class AudibleIE(InfoExtractor):
             'track_number': book_number,
             'episode_id': book_in_series,
             'categories': categories if len(categories) > 0 else None,
-            'genre': categories if len(categories) > 0 else None,
+            'genre': ', '.join(categories) if len(categories) > 0 else None,
             'description': description if description is not "" else None,
             # TODO more properties (see youtube_dl/extractor/common.py)
         }
