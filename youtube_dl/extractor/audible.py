@@ -10,6 +10,7 @@ from ..utils import (
     ExtractorError,
     extract_attributes,
     get_element_by_class,
+    get_element_by_id,
     get_elements_by_class,
     unified_strdate,
     urlencode_postdata,
@@ -50,7 +51,7 @@ class AudibleIE(InfoExtractor):
 
         return label_text
 
-    def _check_login_status(self, html=None):
+    def _is_logged_in(self, html=None):
         if not html:
             html = self._download_webpage(
                 self._HOMEPAGE_URL, None,
@@ -59,14 +60,17 @@ class AudibleIE(InfoExtractor):
         logged_in_elm = get_element_by_class('ui-it-credit-balance', html)
 
         if logged_in_elm is None:
-            raise ExtractorError(
-                'It is currently not possible to automate the login process for '
-                'Audible. You must login via a browser, then export your cookies '
-                'and pass the cookie file to youtube-dl with --cookies.',
-                expected=True)
+            self.report_warning(
+                'You don\'t appear to be logged in.  You will not be able to '
+                'download full audiobooks without being logged in.  It is '
+                'currently not possible to automate the login process for '
+                'Audible.  You must login via a browser, then export your '
+                'cookies and pass the cookie file to youtube-dl with '
+                '--cookies.')
+            return False
 
-    def _real_initialize(self):
-        self._check_login_status()
+        else:
+            return True
 
     def _real_extract(self, url):
         book_id = self._match_id(url)
@@ -169,67 +173,93 @@ class AudibleIE(InfoExtractor):
                     series_sep[sidx+1].strip())
             description += series_list_text + '\n'
 
+        # Audio Sample
+        formats = []
+        sample_audio = self._search_regex(
+            r'\s+data-mp3=(["\'])(?P<url>.+?)\1', webpage,
+            'Audio Sample', default=None, group='url')
+        pprint(sample_audio)
+        sample_format = {
+            'url': sample_audio,
+            'format_id': 'sample',
+            'format': 'sample - audio only',
+            'vcodec': 'none',
+        }
+        formats.append(sample_format)
+
         # Everything below this line requires a login --------------------------
 
-        # TODO: run `_check_login_status` here instead of in `_real_initialize` (reduce page downloads)
-        # TODO: gracefully fail when a user doesn't have access to a book
+        is_logged_in = self._is_logged_in(webpage)
+        book_purchased = False
 
-        cloud_player_url = 'https://www.audible.com/cloudplayer?asin=' + book_id
-        cloud_player_page = self._download_webpage(
-            cloud_player_url, book_id, 'Retrieving token')
-        cloud_player_form = self._hidden_inputs(cloud_player_page)
+        purchase_date_elm = get_element_by_id('adbl-buy-box-purchase-date', webpage)
+        if purchase_date_elm is not None:
+            book_purchased = True
 
-        token = cloud_player_form.get('token')
-        if token is None:
-            raise ExtractorError("Could not find token")
+        if is_logged_in and not book_purchased:
+            self.report_warning(
+                'You don\'t appear to own this title.')
 
-        metadata = self._download_json(
-            'https://www.audible.com/contentlicenseajax', book_id,
-            data=urlencode_postdata({
-                'asin': book_id,
-                'token': token,
-                'key': 'AudibleCloudPlayer',
-                'action': 'getUrl'
-            }),
-            headers={'Referer': cloud_player_url})
-
-        #f4m_url = metadata.get('hdscontentLicenseUrl')
-        m3u8_url = metadata.get('hlscontentLicenseUrl')
-        formats = []
-        if m3u8_url:
-            formats.extend(self._extract_m3u8_formats(
-                m3u8_url, book_id, 'mp4', 'm3u8_native',
-                m3u8_id='hls', fatal=False))
-        #if f4m_url:
-        #    formats.extend(self._extract_akamai_formats(
-        #        f4m_url, book_id))
-        #if m3u8_url:
-        #    formats.extend(self._extract_akamai_formats(
-        #        m3u8_url, book_id))
-        self._sort_formats(formats)
-
-        duration = metadata.get('runTime')
-
+        duration = None
         chapters = []
-        for md_chapter in metadata.get('cloudPlayerChapters', []):
-            ch_start_time = md_chapter.get('chapterStartPosition')
-            ch_end_time = md_chapter.get('chapterEndPosition')
-            ch_title = md_chapter.get('chapterTitle')
+        if is_logged_in and book_purchased:
+            cloud_player_url = 'https://www.audible.com/cloudplayer?asin=' + book_id
+            cloud_player_page = self._download_webpage(
+                cloud_player_url, book_id, 'Retrieving token')
+            cloud_player_form = self._hidden_inputs(cloud_player_page)
 
-            if ch_start_time is None or ch_end_time is None:
-                self.report_warning('Missing chapter information')
-                chapters = []
-                break
+            token = cloud_player_form.get('token')
+            if token is None:
+                raise ExtractorError("Could not find token")
 
-            chapter = {
-                'start_time': float(ch_start_time) / 1000,
-                'end_time': float(ch_end_time) / 1000
-            }
+            metadata = self._download_json(
+                'https://www.audible.com/contentlicenseajax', book_id,
+                data=urlencode_postdata({
+                    'asin': book_id,
+                    'token': token,
+                    'key': 'AudibleCloudPlayer',
+                    'action': 'getUrl'
+                }),
+                headers={'Referer': cloud_player_url})
 
-            if title:
-                chapter['title'] = ch_title
+            #f4m_url = metadata.get('hdscontentLicenseUrl')
+            m3u8_url = metadata.get('hlscontentLicenseUrl')
+            if m3u8_url:
+                m3u8_formats = self._extract_m3u8_formats(
+                    m3u8_url, book_id, 'mp4', 'm3u8_native',
+                    m3u8_id='hls', fatal=False)
+                self._sort_formats(m3u8_formats)
+                formats.extend(m3u8_formats)
+            #if f4m_url:
+            #    formats.extend(self._extract_akamai_formats(
+            #        f4m_url, book_id))
+            #if m3u8_url:
+            #    formats.extend(self._extract_akamai_formats(
+            #        m3u8_url, book_id))
+            #self._sort_formats(formats)
 
-            chapters.append(chapter)
+            duration = metadata.get('runTime')
+
+            chapters = []
+            for md_chapter in metadata.get('cloudPlayerChapters', []):
+                ch_start_time = md_chapter.get('chapterStartPosition')
+                ch_end_time = md_chapter.get('chapterEndPosition')
+                ch_title = md_chapter.get('chapterTitle')
+
+                if ch_start_time is None or ch_end_time is None:
+                    self.report_warning('Missing chapter information')
+                    chapters = []
+                    break
+
+                chapter = {
+                    'start_time': float(ch_start_time) / 1000,
+                    'end_time': float(ch_end_time) / 1000
+                }
+
+                if title:
+                    chapter['title'] = ch_title
+
+                chapters.append(chapter)
 
         return {
             'id': book_id,
