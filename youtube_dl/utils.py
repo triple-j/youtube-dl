@@ -2060,25 +2060,22 @@ def clean_html_markdown(html):
     # Replace html entities
     html = unescapeHTML(html)
 
-    # Wrap text to 80 characters and remove duplicate blank lines
-    wrapped_text = ''
+    # remove duplicate blank lines
+    cleaned_text = ''
     sequential_blank_lines = 0
     for line in html.splitlines():
         line = line.lstrip()
         if not line:
             sequential_blank_lines += 1
             if sequential_blank_lines <= 1:
-                wrapped_text += '\n'
+                cleaned_text += '\n'
             continue
         else:
             sequential_blank_lines = 0
 
-        if line.startswith('#'):
-            wrapped_text += line + '\n'
-        else:
-            wrapped_text += '\n'.join(textwrap.wrap(line, width=80)) + '\n'
+        cleaned_text += line + '\n'
 
-    return wrapped_text.strip()
+    return cleaned_text.strip()
 
 
 def sanitize_open(filename, open_mode):
