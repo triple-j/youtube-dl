@@ -222,21 +222,20 @@ class AudibleIE(InfoExtractor):
                 }),
                 headers={'Referer': cloud_player_url})
 
-            #f4m_url = metadata.get('hdscontentLicenseUrl')
+            f4m_url = metadata.get('hdscontentLicenseUrl')
             m3u8_url = metadata.get('hlscontentLicenseUrl')
+            if f4m_url:
+                f4m_formats = self._extract_akamai_formats(
+                    f4m_url, book_id, skip_protocols=['m3u8'])
+                for i in range(0, len(f4m_formats)):
+                    if not f4m_formats[i].get('vcodec'):
+                        f4m_formats[i]['vcodec'] = 'none'
+                formats.extend(f4m_formats)
             if m3u8_url:
-                m3u8_formats = self._extract_m3u8_formats(
-                    m3u8_url, book_id, 'mp4', 'm3u8_native',
-                    m3u8_id='hls', fatal=False)
-                self._sort_formats(m3u8_formats)
+                m3u8_formats = self._extract_akamai_formats(
+                    m3u8_url, book_id, skip_protocols=['f4m'])
                 formats.extend(m3u8_formats)
-            #if f4m_url:
-            #    formats.extend(self._extract_akamai_formats(
-            #        f4m_url, book_id))
-            #if m3u8_url:
-            #    formats.extend(self._extract_akamai_formats(
-            #        m3u8_url, book_id))
-            #self._sort_formats(formats)
+            self._sort_formats(formats)
 
             duration = metadata.get('runTime')
 
