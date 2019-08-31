@@ -285,3 +285,6 @@ class AudibleIE(InfoExtractor):
             'description': description if description is not "" else None,
             # TODO more properties (see youtube_dl/extractor/common.py)
         }
+
+class AudibleLibraryIE(InfoExtractor):
+    IE_NAME = 'audible:library'
