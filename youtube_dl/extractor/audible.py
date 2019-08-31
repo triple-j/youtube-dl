@@ -16,9 +16,6 @@ from ..utils import (
     urlencode_postdata,
 )
 
-#DEBUG
-from pprint import pprint
-
 class AudibleIE(InfoExtractor):
     IE_NAME = 'audible'
     _VALID_URL = r'https?://(?:.+?\.)?audible\.com/pd/(?:.+)/(?P<id>[^/?#&]+)'
@@ -94,28 +91,6 @@ class AudibleIE(InfoExtractor):
     def _real_extract(self, url):
         book_id = self._match_id(url)
         webpage = self._download_webpage(url, book_id)
-
-        '''
-        info from web page
-
-        ~title~
-        author(s)       -> creator / ~artist: Artist(s) of the track.~ / album_artist
-        narrator(s)     -> artist: Artist(s) of the track.
-        format/type     -> ~categories~ / ~tags~ / album_type
-        Release date    -> release_date: The date (YYYYMMDD) when the video was released. / release_year: Year (YYYY) when the album was released.
-        Language
-        Publisher       -> uploader
-        breadcrumbs     -> categories / ~tags~ / genre
-        ~thumbnail~
-        rating          -> average_rating
-        series          -> series / album
-        book in series  -> episode_number / track_number / episode_id (eg. Book 3)
-        Publisher's Summary -> description
-        Critic Reviews      -> description
-
-        What members say    -> comments
-
-        '''
 
         title = self._og_search_title(webpage)
 
@@ -197,7 +172,6 @@ class AudibleIE(InfoExtractor):
         sample_audio = self._search_regex(
             r'\s+data-mp3=(["\'])(?P<url>.+?)\1', webpage,
             'Audio Sample', default=None, group='url')
-        pprint(sample_audio)
         sample_format = {
             'url': sample_audio,
             'format_id': 'sample',
@@ -217,7 +191,8 @@ class AudibleIE(InfoExtractor):
 
         if is_logged_in and not book_purchased:
             self.report_warning(
-                'You don\'t appear to own this title.')
+                'You don\'t appear to own this title.',
+                book_id)
 
         duration = None
         chapters = []
