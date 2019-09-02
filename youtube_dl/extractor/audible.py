@@ -4,6 +4,10 @@ from __future__ import unicode_literals
 import re
 
 from .common import InfoExtractor
+from ..compat import (
+    compat_urllib_parse_urlencode,
+    compat_urlparse,
+)
 from ..utils import (
     clean_html,
     clean_html_markdown,
@@ -16,10 +20,35 @@ from ..utils import (
     urlencode_postdata,
 )
 
-class AudibleIE(InfoExtractor):
+class AudibleBaseIE(InfoExtractor):
+    _BASE_URL = 'https://www.audible.com'
+
+    def _is_logged_in(self, html=None):
+        if not html:
+            homepage_url = self._BASE_URL
+            html = self._download_webpage(
+                homepage_url, None,
+                'Checking login status')
+
+        logged_in_elm = get_element_by_class('ui-it-credit-balance', html)
+
+        if logged_in_elm is None:
+            self.report_warning(
+                'You don\'t appear to be logged in.  You will not be able to '
+                'download full audiobooks without being logged in.  It is '
+                'currently not possible to automate the login process for '
+                'Audible.  You must login via a browser, then export your '
+                'cookies and pass the cookie file to youtube-dl with '
+                '--cookies.')
+            return False
+
+        else:
+            return True
+
+
+class AudibleIE(AudibleBaseIE):
     IE_NAME = 'audible'
     _VALID_URL = r'https?://(?:.+?\.)?audible\.com/pd/(?:.+)/(?P<id>[^/?#&]+)'
-    _HOMEPAGE_URL = 'https://www.audible.com'
     _TESTS = [{
         'url': 'https://www.audible.com/pd/Neil-Gaimans-How-the-Marquis-Got-His-Coat-Back-Audiobook/B01LZB4R8W',
         'md5': '7bcfd4aab323cee607d8425c9aba275b',
@@ -66,27 +95,6 @@ class AudibleIE(InfoExtractor):
                 label_text = label_text[len(prefix):].strip()
 
         return label_text
-
-    def _is_logged_in(self, html=None):
-        if not html:
-            html = self._download_webpage(
-                self._HOMEPAGE_URL, None,
-                'Checking login status')
-
-        logged_in_elm = get_element_by_class('ui-it-credit-balance', html)
-
-        if logged_in_elm is None:
-            self.report_warning(
-                'You don\'t appear to be logged in.  You will not be able to '
-                'download full audiobooks without being logged in.  It is '
-                'currently not possible to automate the login process for '
-                'Audible.  You must login via a browser, then export your '
-                'cookies and pass the cookie file to youtube-dl with '
-                '--cookies.')
-            return False
-
-        else:
-            return True
 
     def _real_extract(self, url):
         book_id = self._match_id(url)
@@ -268,8 +276,47 @@ class AudibleIE(InfoExtractor):
             'categories': categories if len(categories) > 0 else None,
             'genre': ', '.join(categories) if len(categories) > 0 else None,
             'description': description if description is not "" else None,
-            # TODO more properties (see youtube_dl/extractor/common.py)
         }
 
-class AudibleLibraryIE(InfoExtractor):
+class AudibleLibraryIE(AudibleBaseIE):
     IE_NAME = 'audible:library'
+    _VALID_URL = r'https?://(?:.+?\.)?audible\.com/lib\b'
+
+    def _real_initialize(self):
+        if not self._is_logged_in():
+            raise ExtractorError('Not logged in.', expected=True)
+
+    def _real_extract(self, url):
+        entries = []
+
+        last_page = None
+        page_num = 0
+        while True:
+            page_num += 1
+            page_id = "Page%d" % page_num
+
+            # update url to current page number
+            parsed_url = compat_urlparse.urlparse(url)
+            qs = compat_urlparse.parse_qs(parsed_url.query)
+            qs['page'] = page_num
+            page_url = compat_urlparse.urlunparse(
+                parsed_url._replace(query=compat_urllib_parse_urlencode(qs, True)))
+
+            webpage = self._download_webpage(page_url, page_id)
+
+            for book_link in re.findall(r'(<a[^>]+aria-describedby=["\']product-list-flyout-[^"\'][^>]*>)', webpage):
+                book_link_attrs = extract_attributes(book_link)
+                if book_link_attrs.get('href'):
+                    entries.append(self.url_result(
+                        self._BASE_URL + book_link_attrs.get('href'),
+                        ie=AudibleIE.ie_key()))
+
+            if last_page is None:
+                pages = get_elements_by_class('pageNumberElement', webpage)
+                if pages:
+                    last_page = int(pages[-1])
+
+            if page_num >= last_page:
+                break
+
+        return self.playlist_result(entries)
