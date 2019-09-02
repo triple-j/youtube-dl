@@ -103,14 +103,12 @@ class AudibleIE(AudibleBaseIE):
         title = self._og_search_title(webpage)
 
         thumbnails = []
-
         og_thumbnail = self._og_search_thumbnail(webpage)
         if og_thumbnail:
             thumbnails.append({
                 'url': og_thumbnail,
                 'preference': 210
             })
-
         thumb_element = self._search_regex(
             r'(<img[^>]+alt=["\'][^\'"]*\bcover art\b[^>]*>)', webpage,
             'thumbnail element', default=None)
@@ -188,11 +186,8 @@ class AudibleIE(AudibleBaseIE):
         }
         formats.append(sample_format)
 
-        # Everything below this line requires a login --------------------------
-
         is_logged_in = self._is_logged_in(webpage)
         book_purchased = False
-
         purchase_date_elm = get_element_by_id('adbl-buy-box-purchase-date', webpage)
         if purchase_date_elm is not None:
             book_purchased = True
@@ -233,7 +228,6 @@ class AudibleIE(AudibleBaseIE):
 
             duration = metadata.get('runTime')
 
-            chapters = []
             for md_chapter in metadata.get('cloudPlayerChapters', []):
                 ch_start_time = md_chapter.get('chapterStartPosition')
                 ch_end_time = md_chapter.get('chapterEndPosition')
