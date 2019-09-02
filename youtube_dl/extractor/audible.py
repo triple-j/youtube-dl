@@ -20,14 +20,14 @@ from ..utils import (
     urlencode_postdata,
 )
 
+
 class AudibleBaseIE(InfoExtractor):
     _BASE_URL = 'https://www.audible.com'
 
     def _is_logged_in(self, html=None):
         if not html:
-            homepage_url = self._BASE_URL
             html = self._download_webpage(
-                homepage_url, None,
+                self._BASE_URL, None,
                 'Checking login status')
 
         logged_in_elm = get_element_by_class('ui-it-credit-balance', html)
@@ -170,7 +170,7 @@ class AudibleIE(AudibleBaseIE):
             for sidx in range(0, len(series_sep), 2):
                 series_list_text += '- %s, %s\n' % (
                     series_sep[sidx].strip(),
-                    series_sep[sidx+1].strip())
+                    series_sep[sidx + 1].strip())
             description += series_list_text + '\n'
 
         # Audio Sample
@@ -271,6 +271,7 @@ class AudibleIE(AudibleBaseIE):
             'genre': ', '.join(categories) if len(categories) > 0 else None,
             'description': description if description is not "" else None,
         }
+
 
 class AudibleLibraryIE(AudibleBaseIE):
     IE_NAME = 'audible:library'
