@@ -277,10 +277,11 @@ class WebVttHlsFD(FragmentFD):
 
             line_iter = iter(lines)
             line = next(line_iter)
-            if not line.startswith('WEBVTT'):
-                self.report_error('Not a valid WebVTT subtitles segment')
-            if len(line) > 6 and not (line.startswith('WEBVTT ') or line.startswith('WEBVTT\t')):
-                self.report_error('Not a valid WebVTT subtitles segment')
+            # HACK: causing problems with roosterteeth, so lets just not validate it
+            #if not line.startswith('WEBVTT'):
+            #    self.report_error('Not a valid WebVTT subtitles segment')
+            #if len(line) > 6 and not (line.startswith('WEBVTT ') or line.startswith('WEBVTT\t')):
+            #    self.report_error('Not a valid WebVTT subtitles segment')
 
             try:
                 # read header
